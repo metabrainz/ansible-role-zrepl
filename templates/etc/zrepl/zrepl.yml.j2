@@ -1,0 +1,4 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+
+{{ _zrepl_configuration | to_nice_yaml(indent=2) }}

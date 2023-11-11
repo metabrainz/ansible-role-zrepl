@@ -1,0 +1,27 @@
+---
+zrepl_signing_key_url: "https://zrepl.cschwarz.com/apt/apt-key.asc"
+zrepl_signing_key_checksum: "sha256:81e62b9ea6d11d06ae81c46c835acfe9e7250d884cccaf46d454534fd2e8a09d"
+zrepl_signing_key_path: /usr/share/keyrings/zrepl.asc
+zrepl_deb_architecture: "{{ zrepl_deb_architectures[ansible_architecture] }}"
+
+zrepl_service_enabled: true
+zrepl_service_state: started
+zrepl_restart_handler_state: restarted
+
+zrepl_configuration:
+  global:
+    logging:
+      - type: syslog
+        format: human
+        level: warn
+zrepl_group_configuration: {}
+zrepl_host_configuration: {}
+
+zrepl_hooks_directory: /etc/zrepl/hooks
+zrepl_hooks: {}
+zrepl_group_hooks: {}
+zrepl_host_hooks: {}
+
+# https://docs.ansible.com/ansible/latest/collections/ansible/builtin/combine_filter.html#keyword-parameters
+zrepl_configuration_list_merge: replace
+zrepl_configuration_recursive_merge: true

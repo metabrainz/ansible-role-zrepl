@@ -1,0 +1,42 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Ensure zrepl is installed
+      ansible.builtin.stat:
+        path: "/usr/bin/zrepl"
+      register: result
+      changed_when: false
+      failed_when: result.stat.isreg is not defined or not result.stat.isreg
+
+    - name: Ensure zrepl is running
+      ansible.builtin.service:
+        name: zrepl
+        state: started
+      check_mode: true
+      register: result
+      failed_when: result is changed
+
+    - name: Ensure zrepl configuration files is correct
+      ansible.builtin.copy:
+        src: "zrepl.yml"
+        dest: "/etc/zrepl/zrepl.yml"
+        mode: "0644"
+      check_mode: true
+      diff: true
+      register: result
+      failed_when: result is changed
+
+    - name: Ensure zrepl hook is correct
+      ansible.builtin.copy:
+        dest: /etc/zrepl/hooks/test.sh
+        mode: "0755"
+        content: |
+          #!/bin/bash
+
+          echo "test hook"
+      check_mode: true
+      diff: true
+      register: result
+      failed_when: result is changed

@@ -1,0 +1,7 @@
+---
+- name: Restart zrepl
+  listen: restart zrepl
+  ansible.builtin.service:
+    name: zrepl
+    state: "{{ zrepl_restart_handler_state }}" # noqa args[module]
+  ignore_errors: "{{ ansible_check_mode }}"

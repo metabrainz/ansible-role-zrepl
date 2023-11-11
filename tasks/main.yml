@@ -1,0 +1,84 @@
+---
+- name: Download zrepl repository key
+  ansible.builtin.get_url:
+    url: "{{ zrepl_signing_key_url }}"
+    checksum: "{{ zrepl_signing_key_checksum | d(omit) }}"
+    dest: "{{ zrepl_signing_key_path }}"
+    mode: "0644"
+
+- name: Install zrepl repository
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [arch={{ zrepl_deb_architecture }} signed-by={{ zrepl_signing_key_path }}]
+      https://zrepl.cschwarz.com/apt/{{ ansible_distribution | lower }}
+      {{ ansible_distribution_release | lower }} main
+    filename: zrepl
+    state: present
+    update_cache: yes
+
+- name: Install zrepl
+  ansible.builtin.apt:
+    name: zrepl
+    state: present
+    policy_rc_d: 101
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Divert zrepl configuration file
+  ansible.builtin.command: >
+    dpkg-divert --quiet --local --divert
+    /etc/zrepl/zrepl.yml.dpkg-divert
+    --rename /etc/zrepl/zrepl.yml
+  args:
+    creates: /etc/zrepl/zrepl.yml.dpkg-divert
+
+- name: Install zrepl configuration
+  ansible.builtin.template:
+    src: "etc/zrepl/zrepl.yml.j2"
+    dest: "/etc/zrepl/zrepl.yml"
+    mode: 0644
+    validate: zrepl configcheck --config %s
+  notify: restart zrepl
+  vars:
+    _zrepl_configuration: >-
+      {{
+        zrepl_configuration | combine(
+          zrepl_group_configuration,
+          zrepl_host_configuration,
+          list_merge=zrepl_configuration_list_merge,
+          recursive=zrepl_configuration_recursive_merge
+        )
+      }}
+
+- name: Create zrepl hooks directory
+  ansible.builtin.file:
+    path: "{{ zrepl_hooks_directory }}"
+    mode: "0755"
+    state: directory
+
+- name: Install zrepl hooks
+  ansible.builtin.template:
+    src: "etc/zrepl/hooks/hook.j2"
+    dest: "{{ zrepl_hooks_directory }}/{{ item.key }}"
+    owner: "{{ item.value.owner | d(omit) }}"
+    group: "{{ item.value.group | d(omit) }}"
+    mode: "{{ item.value.mode | d('0755') }}"
+    backup: "{{ item.value.backup | d(omit) }}"
+    force: "{{ item.value.force | d(omit) }}"
+  loop:  "{{ _zrepl_hooks | dict2items }}"
+  vars:
+    _zrepl_hooks: >-
+      {{
+        zrepl_hooks | combine(
+          zrepl_group_hooks,
+          zrepl_host_hooks,
+          list_merge=zrepl_configuration_list_merge,
+          recursive=zrepl_configuration_recursive_merge
+        )
+      }}
+
+- name: Enable and start zrepl
+  ansible.builtin.service:
+    name: zrepl
+    enabled: "{{ zrepl_service_enabled }}"
+    state: "{{ zrepl_service_state }}"
+  ignore_errors: "{{ ansible_check_mode }}"

@@ -1,0 +1,11 @@
+---
+zrepl_group_configuration:
+  jobs:
+    - type: sink
+      name: test_sink
+      root_fs: testpool/zrepl
+      serve:
+        type: tcp
+        listen: ":4242"
+        clients:
+          "192.168.20.1": "test-client"

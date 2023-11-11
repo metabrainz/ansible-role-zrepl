@@ -1,0 +1,6 @@
+---
+zrepl_host_hooks:
+  test.sh: |
+    #!/bin/bash
+
+    echo "test hook"
